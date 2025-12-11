@@ -1,0 +1,6 @@
+
+> minibar-backend@1.0.0 start
+> node server.js
+
+Minibar backend running at http://localhost:3000
+Terminated
