@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión – Minibar Nattivo</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Sigmar&display=swap"
+    rel="stylesheet"
+  />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+  <div class="login-page">
+    <section class="login-panel">
+      <div class="login-brand">
+        <div class="brand-avatar">
+          <img src="images/mujer_isleña.png" alt="Nattivo">
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">Nattivo</div>
+          <div class="brand-subtitle">Collection Hotel</div>
+        </div>
+      </div>
+
+      <header class="login-header">
+        <h1>Welcome back</h1>
+        <p>Inicia sesión con tu correo corporativo y contraseña.</p>
+      </header>
+
+      <form id="login-form" class="login-form">
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="field-input-wrapper">
+            <span class="field-icon"><i class="ri-mail-line"></i></span>
+            <input
+              type="email"
+              id="email"
+              placeholder="operador@nattivo.com"
+              autocomplete="email"
+              required
+            />
+            <span class="field-status" id="email-status">
+              <i class="ri-check-line"></i>
+            </span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="field-input-wrapper">
+            <span class="field-icon"><i class="ri-lock-2-line"></i></span>
+            <input
+              type="password"
+              id="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="field-toggle" id="password-toggle">
+              <i class="ri-eye-off-line"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-options">
+          <label class="checkbox">
+            <input type="checkbox" id="remember" />
+            <span class="checkbox-box">
+              <i class="ri-check-line"></i>
+            </span>
+            Remember me
+          </label>
+
+          <button type="button" class="link-button">Forgot password?</button>
+        </div>
+
+        <button type="submit" class="btn-primary" id="login-submit">
+          Sign In
+        </button>
+
+        <div id="login-status" class="login-status"></div>
+      </form>
+
+      <div class="login-footer">
+        <span>¿No tienes cuenta?</span>
+        <button type="button" class="link-button">Sign Up</button>
+      </div>
+    </section>
+
+    <section class="login-photo">
+      <div class="photo-overlay"></div>
+      <div class="photo-caption">
+        <h2>Controla tu minibar</h2>
+        <p>Registra los consumos en segundos y reduce tiempos de checkout.</p>
+      </div>
+    </section>
+  </div>
+
+  <div id="loader-overlay" class="loader-overlay">
+    <div class="loader-card">
+      <img src="images/mujer_isleña.png" class="loader-logo">
+      <div class="loader-spinner"></div>
+      <p class="loader-text">Iniciando sesión en el minibar…</p>
+    </div>
+  </div>
+
+  <script src="js/login.js" defer></script>
+</body>
+</html>
+
