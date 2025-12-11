@@ -1,67 +1,25 @@
-function showLoader() {
-  const overlay = document.getElementById("loader-overlay");
-  if (overlay) {
-    overlay.classList.add("visible");
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('login-form');
+  const passwordToggle = document.getElementById('password-toggle');
+  const passwordInput = document.getElementById('password');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // Aquí iría la lógica de envío del formulario de login
+      console.log('Login form submitted');
+    });
   }
-}
 
-function hideLoader() {
-  const overlay = document.getElementById("loader-overlay");
-  if (overlay) {
-    overlay.classList.remove("visible");
+  if (passwordToggle && passwordInput) {
+    passwordToggle.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordToggle.innerHTML = '<i class="ri-eye-line"></i>';
+      } else {
+        passwordInput.type = 'password';
+        passwordToggle.innerHTML = '<i class="ri-eye-off-line"></i>';
+      }
+    });
   }
-}
-
-function setupPasswordToggle() {
-  const passwordInput = document.getElementById("password");
-  const toggle = document.getElementById("password-toggle");
-  if (!passwordInput || !toggle) return;
-
-  const icon = toggle.querySelector("i");
-
-  toggle.addEventListener("click", () => {
-    const hidden = passwordInput.type === "password";
-    passwordInput.type = hidden ? "text" : "password";
-    if (icon) {
-      icon.className = hidden ? "ri-eye-line" : "ri-eye-off-line";
-    }
-  });
-}
-
-function setupLoginForm() {
-  const form = document.getElementById("login-form");
-  const status = document.getElementById("login-status");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-
-  if (!form || !status || !emailInput || !passwordInput) return;
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    status.textContent = "";
-    status.className = "login-status";
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      status.textContent = "Completa el correo y la contraseña.";
-      return;
-    }
-
-    showLoader();
-
-    setTimeout(() => {
-      hideLoader();
-      window.location.href = "/app";
-    }, 1000);
-  });
-}
-
-function initLogin() {
-  setupPasswordToggle();
-  setupLoginForm();
-}
-
-document.addEventListener("DOMContentLoaded", initLogin);
+});
