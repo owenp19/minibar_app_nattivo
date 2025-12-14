@@ -7,12 +7,17 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Sigmar&display=swap"
-    rel="stylesheet"
-  />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
+  <!-- google fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+  <!-- remixicions -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/login.css" />
+
+  <!-- estilo css -->
+  <link rel="stylesheet" href="/css/login.css" />
 </head>
 <body>
   <div class="login-page">
@@ -28,18 +33,24 @@
       </div>
 
       <header class="login-header">
-        <h1>Welcome back</h1>
+        <h1>Bienvenido de nuevo</h1>
         <p>Inicia sesión con tu correo corporativo y contraseña.</p>
       </header>
 
-      <form id="login-form" class="login-form">
+      <form
+        id="login-form"
+        class="login-form"
+        action="/login"
+        method="POST"
+      >
         <div class="field">
-          <label for="email">Email address</label>
+          <label for="email">Correo electrónico</label>
           <div class="field-input-wrapper">
             <span class="field-icon"><i class="ri-mail-line"></i></span>
             <input
               type="email"
               id="email"
+              name="email"
               placeholder="operador@nattivo.com"
               autocomplete="email"
               required
@@ -51,12 +62,13 @@
         </div>
 
         <div class="field">
-          <label for="password">Password</label>
+          <label for="password">Contraseña</label>
           <div class="field-input-wrapper">
             <span class="field-icon"><i class="ri-lock-2-line"></i></span>
             <input
               type="password"
               id="password"
+              name="password"
               placeholder="••••••••"
               autocomplete="current-password"
               required
@@ -69,18 +81,18 @@
 
         <div class="login-options">
           <label class="checkbox">
-            <input type="checkbox" id="remember" />
+            <input type="checkbox" id="remember" name="remember" />
             <span class="checkbox-box">
               <i class="ri-check-line"></i>
             </span>
-            Remember me
+            Recordarme
           </label>
 
-          <button type="button" class="link-button">Forgot password?</button>
+          <button type="button" class="link-button">¿Olvidaste tu contraseña?</button>
         </div>
 
         <button type="submit" class="btn-primary" id="login-submit">
-          Sign In
+          Iniciar sesión
         </button>
 
         <div id="login-status" class="login-status"></div>
@@ -88,7 +100,7 @@
 
       <div class="login-footer">
         <span>¿No tienes cuenta?</span>
-        <button type="button" class="link-button">Sign Up</button>
+        <button type="button" class="link-button">Crear cuenta</button>
       </div>
     </section>
 
@@ -103,13 +115,13 @@
 
   <div id="loader-overlay" class="loader-overlay">
     <div class="loader-card">
-      <img src="images/mujer_isleña.png" class="loader-logo">
+      <img src="images/mujer_isleña.png" class="loader-logo" alt="Nattivo">
       <div class="loader-spinner"></div>
       <p class="loader-text">Iniciando sesión en el minibar…</p>
     </div>
   </div>
 
-  <script src="js/login.js" defer></script>
+  <script src="/js/login.js" defer></script>
 </body>
 </html>
 

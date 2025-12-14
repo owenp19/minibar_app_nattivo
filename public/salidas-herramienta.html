@@ -3,27 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard minibar – Nattivo</title>
+  <title>Salidas minibar - Nattivo</title>
 
-  <!-- Fuentes Google -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Xanh+Mono:ital@0;1&display=swap" rel="stylesheet">
- 
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css"
-  />
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/index.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" />
+  <link rel="stylesheet" href="/css/salidas-herramienta.css" />
 </head>
 <body>
   <div class="app-shell">
-    <!-- Backdrop para mobile -->
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo-block">
         <img
@@ -35,58 +25,60 @@
 
       <div class="sidebar-user">
         <div class="sidebar-user-avatar">
-          <span>MB</span>
+          <span id="user-initials"></span>
         </div>
         <div class="sidebar-user-info">
-          <div class="sidebar-user-name">Operador minibar</div>
+          <div class="sidebar-user-name" id="user-name">Operador minibar</div>
           <div class="sidebar-user-role">Nattivo Collection Hotel</div>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <button class="nav-item nav-item-active">
-          <i class="ri-bar-chart-2-line nav-icon"></i>
-          <span class="nav-label">Consumos minibar</span>
-        </button>
-        <button class="nav-item">
-          <i class="ri-file-list-3-line nav-icon"></i>
-          <span class="nav-label">Historial de consumos</span>
-        </button>
-        <button class="nav-item">
+        <!-- Primera opción: Panel de control -->
+        <a href="/app/panel-control" class="nav-item">
+          <i class="ri-dashboard-line nav-icon"></i>
+          <span class="nav-label">Panel de control</span>
+        </a>
+
+        <!-- Segunda opción: Salidas Herramienta -->
+        <a href="/app/salidas" class="nav-item">
+          <i class="ri-door-open-line nav-icon"></i>
+          <span class="nav-label">Salidas Herramienta</span>
+        </a>
+
+        <!-- Tercera opción: Ocupadas Herramienta -->
+        <a href="/app/ocupadas" class="nav-item">
           <i class="ri-hotel-bed-line nav-icon"></i>
-          <span class="nav-label">Habitaciones</span>
-        </button>
-        <button class="nav-item">
-          <i class="ri-drinks-2-line nav-icon"></i>
-          <span class="nav-label">Productos</span>
-        </button>
-        <button class="nav-item">
-          <i class="ri-settings-3-line nav-icon"></i>
-          <span class="nav-label">Configuración</span>
-        </button>
+          <span class="nav-label">Ocupadas Herramienta</span>
+        </a>
       </nav>
+
+      <form action="/api/auth/logout" method="POST" class="sidebar-nav">
+        <button type="submit" class="nav-item">
+          <i class="ri-logout-box-line nav-icon"></i>
+          <span class="nav-label">Cerrar sesión</span>
+        </button>
+      </form>
     </aside>
 
-    <!-- Panel principal -->
     <main class="main-panel">
       <header class="main-header">
         <button class="menu-toggle" id="menu-toggle">
           <i class="ri-menu-line"></i>
         </button>
         <div class="main-header-title">
-          <h1>Registro de Consumo</h1>
+          <h1>Salidas minibar</h1>
           <p>
-            Selecciona la habitación, marca los productos consumidos y envía el reporte a recepción.
+            Registra el consumo de las habitaciones en salida y se envía el resumen a recepción por WhatsApp.
           </p>
         </div>
       </header>
 
       <section class="card">
         <div class="form-grid">
-          <!-- Columna izquierda -->
           <div class="form-column">
             <div class="form-section">
-              <label for="room-select">Habitación</label>
+              <label for="room-select">Habitación en salida</label>
               <select id="room-select">
                 <option value="">Seleccione una habitación</option>
               </select>
@@ -95,20 +87,18 @@
             <div class="form-section">
               <label>Productos del minibar</label>
               <div id="products-list" class="products-list">
-                <!-- Se rellena dinámicamente por app.js -->
               </div>
             </div>
           </div>
 
-          <!-- Columna derecha -->
           <div class="form-column form-column-side">
             <div class="summary-card">
-              <h2>¿Como funicona?</h2>
+              <h2>¿Cómo funciona?</h2>
               <p class="summary-text">
                 El sistema enviará un mensaje a WhatsApp con la habitación, los productos seleccionados y las cantidades.
               </p>
               <ul class="summary-list">
-                <li>1. Selecciona la habitación en salida.</li>
+                <li>1. Selecciona la habitación que está en salida.</li>
                 <li>2. Marca solo los productos realmente consumidos.</li>
                 <li>3. Ajusta la cantidad de cada producto.</li>
                 <li>4. Añade una nota si es necesario.</li>
@@ -137,6 +127,7 @@
     </main>
   </div>
 
-  <script src="/app.js" defer></script>
+  <script src="/js/salidas-herramienta.js" defer></script>
 </body>
 </html>
+

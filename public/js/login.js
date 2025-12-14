@@ -1,67 +1,79 @@
-function showLoader() {
-  const overlay = document.getElementById("loader-overlay");
-  if (overlay) {
-    overlay.classList.add("visible");
-  }
-}
-
-function hideLoader() {
-  const overlay = document.getElementById("loader-overlay");
-  if (overlay) {
-    overlay.classList.remove("visible");
-  }
-}
-
-function setupPasswordToggle() {
-  const passwordInput = document.getElementById("password");
-  const toggle = document.getElementById("password-toggle");
-  if (!passwordInput || !toggle) return;
-
-  const icon = toggle.querySelector("i");
-
-  toggle.addEventListener("click", () => {
-    const hidden = passwordInput.type === "password";
-    passwordInput.type = hidden ? "text" : "password";
-    if (icon) {
-      icon.className = hidden ? "ri-eye-line" : "ri-eye-off-line";
-    }
-  });
-}
-
-function setupLoginForm() {
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("login-form");
-  const status = document.getElementById("login-status");
   const emailInput = document.getElementById("email");
+  const emailStatus = document.getElementById("email-status");
   const passwordInput = document.getElementById("password");
+  const passwordToggle = document.getElementById("password-toggle");
+  const loaderOverlay = document.getElementById("loader-overlay");
+  const loginStatus = document.getElementById("login-status");
 
-  if (!form || !status || !emailInput || !passwordInput) return;
+  function showLoader(show) {
+    if (!loaderOverlay) return;
+    loaderOverlay.style.display = show ? "flex" : "none";
+  }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  function setStatus(message, type) {
+    if (!loginStatus) return;
+    loginStatus.textContent = message || "";
+    loginStatus.className = "login-status" + (type ? " " + type : "");
+  }
 
-    status.textContent = "";
-    status.className = "login-status";
+  if (passwordToggle && passwordInput) {
+    passwordToggle.addEventListener("click", () => {
+      const isHidden = passwordInput.type === "password";
+      passwordInput.type = isHidden ? "text" : "password";
+      const icon = passwordToggle.querySelector("i");
+      if (icon) {
+        icon.classList.remove(isHidden ? "ri-eye-off-line" : "ri-eye-line");
+        icon.classList.add(isHidden ? "ri-eye-line" : "ri-eye-off-line");
+      }
+    });
+  }
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+  if (emailInput && emailStatus) {
+    emailInput.addEventListener("input", () => {
+      const value = emailInput.value.trim();
+      const valid = value.includes("@") && value.includes(".");
+      emailStatus.style.opacity = valid ? "1" : "0";
+    });
+  }
 
-    if (!email || !password) {
-      status.textContent = "Completa el correo y la contraseña.";
-      return;
-    }
+  if (form) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setStatus("", "");
+      showLoader(true);
 
-    showLoader();
+      try {
+        const formData = new FormData(form);
+        const body = new URLSearchParams(formData);
 
-    setTimeout(() => {
-      hideLoader();
-      window.location.href = "/app";
-    }, 1000);
-  });
-}
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          body
+        });
 
-function initLogin() {
-  setupPasswordToggle();
-  setupLoginForm();
-}
+        if (response.redirected) {
+          window.location.href = response.url;
+          return;
+        }
 
-document.addEventListener("DOMContentLoaded", initLogin);
+        if (!response.ok) {
+          const text = await response.text();
+          showLoader(false);
+          setStatus(text || "Error al iniciar sesión. Inténtalo de nuevo.", "error");
+          return;
+        }
+
+        showLoader(false);
+        window.location.href = "/app"; // Redirige a /app después de un login exitoso
+      } catch (error) {
+        console.error("Error en login:", error);
+        showLoader(false);
+        setStatus("Ocurrió un error al iniciar sesión. Verifica tu conexión.", "error");
+      }
+    });
+  }
+
+  showLoader(false);
+});

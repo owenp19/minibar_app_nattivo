@@ -1,32 +1,59 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const session = require("express-session");
 const { initDbPool } = require("./config/db");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const productRoutes = require("./routes/productRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const consumptionRoutes = require("./routes/consumptionRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 function createApp() {
   initDbPool();
 
   const app = express();
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: true,
+      credentials: true
+    })
+  );
   app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
 
-  // Archivos estáticos generales (JS, CSS, imágenes, etc.)
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "minibar-super-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true
+      }
+    })
+  );
+
+  function requireLogin(req, res, next) {
+    if (!req.session.user) {
+      return res.redirect("/");
+    }
+    next();
+  }
+
+  app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "login.html"));
+  });
+
   app.use(express.static(path.join(__dirname, "..", "public")));
 
-   // Archivos estáticos bajo /static (se puede usar esta ruta para imágenes)
   app.use(
     "/static",
     express.static(path.join(__dirname, "..", "public"))
   );
 
-  // Landing de la API (la pantalla bonita que ya tienes en "/")
-  app.get("/", (req, res) => {
+  app.get("/api", (req, res) => {
     res.send(`
       <!DOCTYPE html>
       <html lang="es">
@@ -333,9 +360,12 @@ function createApp() {
     `);
   });
 
-  // Ruta para la PWA (frontend): http://localhost:3000/app
-  app.get("/app", (req, res) => {
-    res.sendFile(path.join(__dirname, "..", "public", "index.html"));
+  app.get("/app", requireLogin, (req, res) => {
+    res.redirect("/app/salida");
+  });
+
+  app.get("/app/salida", requireLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "salidas-herramienta.html"));
   });
 
   app.get("/api/health", (req, res) => {
@@ -345,9 +375,11 @@ function createApp() {
     });
   });
 
-  app.use("/api/products", productRoutes);
-  app.use("/api/rooms", roomRoutes);
-  app.use("/api/consumptions", consumptionRoutes);
+  app.use("/api/auth", authRoutes);
+
+  app.use("/api/products", requireLogin, productRoutes);
+  app.use("/api/rooms", requireLogin, roomRoutes);
+  app.use("/api/consumptions", requireLogin, consumptionRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
@@ -358,4 +390,3 @@ function createApp() {
 module.exports = {
   createApp
 };
-

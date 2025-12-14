@@ -1,4 +1,40 @@
-const WHATSAPP_PHONE = ""; // déjalo vacío: se abrirá WhatsApp para elegir grupo
+const WHATSAPP_PHONE = "";
+
+function getInitialsFromName(fullName) {
+  if (!fullName) return "";
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  const first = parts[0].charAt(0);
+  const last = parts[parts.length - 1].charAt(0);
+  return (first + last).toUpperCase();
+}
+
+async function loadCurrentUser() {
+  const nameEl = document.getElementById("user-name");
+  const initialsEl = document.getElementById("user-initials");
+  if (!nameEl || !initialsEl) return;
+
+  try {
+    const res = await fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "include"
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const fullName = data.fullName || data.full_name || data.name || "";
+
+    if (fullName) {
+      nameEl.textContent = fullName;
+      initialsEl.textContent = getInitialsFromName(fullName);
+    }
+  } catch (err) {
+    console.error("Error cargando usuario actual:", err);
+  }
+}
 
 function formatRoomLabel(room, index) {
   const roomNumber =
@@ -300,6 +336,7 @@ function setupMenuToggle() {
 }
 
 function init() {
+  loadCurrentUser();
   loadRooms();
   loadProducts();
 
