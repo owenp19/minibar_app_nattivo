@@ -245,7 +245,6 @@ body {
   gap: 16px;
 }
 
-/* derecha centrada verticalmente en desktop */
 .form-column-side {
   max-width: 320px;
   display: flex;
@@ -270,7 +269,8 @@ body {
 /* Inputs */
 select,
 input[type="number"],
-textarea {
+textarea,
+input[type="date"] {
   width: 100%;
   border-radius: 10px;
   border: 1px solid var(--input-border);
@@ -294,7 +294,8 @@ select option {
 
 select:focus,
 input[type="number"]:focus,
-textarea:focus {
+textarea:focus,
+input[type="date"]:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px rgba(200, 170, 106, 0.7);
 }
@@ -370,36 +371,105 @@ textarea:focus {
   color: var(--color-muted);
 }
 
-/* Resumen */
-.summary-card {
-  background: var(--color-accent);
+/* Informe */
+.report-card {
+  background: #fffaf1;
   border-radius: 15px;
-  padding: 25px;
+  padding: 16px;
   margin-bottom: 15px;
-  border: 1px solid var(--sidebar-border);
+  border: 1px solid var(--color-border-soft);
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.summary-card h2 {
+.report-card h2 {
   margin: 0 0 6px 0;
-  font-size: 21px;
+  font-size: 19px;
+  font-family: var(--font-text);
+  font-weight: 700;
+  color: var(--color-accent-strong);
+}
+
+.summary-text-report {
+  font-size: 15px;
+  font-family: var(--font-text);
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.report-field {
+  flex: 1 1 120px;
+  min-width: 120px;
+}
+
+.report-field label {
+  display: block;
+  font-size: 13px;
   font-family: var(--font-text);
   font-weight: 600;
-  color: #fdfaf4;
+  color: var(--color-muted-strong);
+  margin-bottom: 6px;
 }
 
-.summary-text {
-  font-family: var(--font-text);
-  margin: 0 0 6px 0;
-  font-size: 14px;
-  color: #fdfaf4;
+.report-field input[type="date"] {
+  width: 100%;
+  min-width: 0;
 }
 
-.summary-list {
-  margin: 0;
-  padding-left: 17px;
+.btn-report {
+  flex: 0 0 auto;
+  max-width: 100%;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 14px;
+  font-size: 15px;
   font-family: var(--font-text);
-  font-size: 14px;
+  font-weight: 800;
+  background: var(--color-accent);
   color: #fdfaf4;
+  cursor: pointer;
+  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 0 10px 22px rgba(143, 112, 52, 0.25);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.btn-report:hover {
+  background: #7c5f2a;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(143, 112, 52, 0.28);
+}
+
+.btn-report:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px rgba(143, 112, 52, 0.22);
+}
+
+.report-status {
+  font-size: 15px;
+  font-family: var(--font-text);
+  min-height: 16px;
+  margin-top: 10px;
+  color: var(--color-muted-strong);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.report-status.ok {
+  color: var(--color-success);
+}
+
+.report-status.err {
+  color: var(--color-error);
 }
 
 /* Acciones */
@@ -490,6 +560,15 @@ textarea:focus {
     max-width: none;
     justify-content: flex-start;
   }
+
+  .report-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btn-report {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
 
 @media (max-width: 600px) {
@@ -509,5 +588,19 @@ textarea:focus {
   .product-qty {
     grid-column: 2 / 3;
     justify-content: flex-start;
+  }
+
+  .report-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-report {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .btn-report {
+    width: 100%;
   }
 }

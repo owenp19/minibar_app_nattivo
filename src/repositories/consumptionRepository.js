@@ -1,40 +1,116 @@
-const { getDbPool } = require("../config/db");
+const db = require("../config/db");
 
 async function createConsumptionWithItems(roomId, note, items) {
-  const pool = getDbPool();
+  const room = Number(roomId);
+  if (!Number.isFinite(room) || room <= 0) throw new Error("roomId inválido");
+
+  const normalizedItems = Array.isArray(items)
+    ? items
+        .map((x) => ({
+          productId: Number(x.productId),
+          quantity: Number(x.quantity),
+        }))
+        .filter(
+          (x) =>
+            Number.isFinite(x.productId) &&
+            x.productId > 0 &&
+            Number.isFinite(x.quantity) &&
+            x.quantity > 0
+        )
+    : [];
+
+  if (normalizedItems.length === 0) throw new Error("items inválidos");
+
+  const pool = db.getDbPool();
   const conn = await pool.getConnection();
 
   try {
     await conn.beginTransaction();
 
-    const [consResult] = await conn.query(
-      "INSERT INTO consumptions (room_id, consumption_date, note, created_at) VALUES (?, NOW(), ?, NOW())",
-      [roomId, note || null]
+    const [insertConsumption] = await conn.query(
+      `INSERT INTO consumptions (room_id, note, created_at, consumption_date)
+       VALUES (?, ?, NOW(), NOW())`,
+      [room, note || null]
     );
 
-    const consumptionId = consResult.insertId;
+    const consumptionId = insertConsumption.insertId;
 
-    const values = items.map((item) => [
-      consumptionId,
-      item.productId,
-      item.quantity
-    ]);
-
-    await conn.query(
-      "INSERT INTO consumption_items (consumption_id, product_id, quantity) VALUES ?",
-      [values]
-    );
+    for (const it of normalizedItems) {
+      await conn.query(
+        `INSERT INTO consumption_items (consumption_id, product_id, quantity)
+         VALUES (?, ?, ?)`,
+        [consumptionId, it.productId, it.quantity]
+      );
+    }
 
     await conn.commit();
     return consumptionId;
   } catch (err) {
-    await conn.rollback();
+    try {
+      await conn.rollback();
+    } catch (_) {}
     throw err;
   } finally {
     conn.release();
   }
 }
 
+async function getConsumptionWithItemsById(consumptionId) {
+  const id = Number(consumptionId);
+  if (!Number.isFinite(id) || id <= 0) return null;
+
+  const rows = await db.query(
+    `
+      SELECT
+        c.id,
+        c.created_at AS createdAt,
+        c.consumption_date AS consumptionDate,
+        c.note AS note,
+        h.numero AS roomNumber
+      FROM consumptions c
+      JOIN habitaciones h ON h.id_habitacion = c.room_id
+      WHERE c.id = ?
+      LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!rows || rows.length === 0) return null;
+
+  const c = rows[0];
+
+  const itemRows = await db.query(
+    `
+      SELECT
+        p.name AS name,
+        p.price AS price,
+        ci.quantity AS quantity
+      FROM consumption_items ci
+      JOIN products p ON p.id = ci.product_id
+      WHERE ci.consumption_id = ?
+    `,
+    [id]
+  );
+
+  const items = (itemRows || []).map((x) => ({
+    name: x.name,
+    price: Number(x.price) || 0,
+    quantity: Number(x.quantity) || 0,
+  }));
+
+  const total = items.reduce((acc, it) => acc + it.quantity * it.price, 0);
+
+  return {
+    id: c.id,
+    createdAt: c.createdAt || c.consumptionDate || null,
+    roomNumber: String(c.roomNumber ?? "").trim(),
+    note: c.note || "",
+    items,
+    total,
+  };
+}
+
 module.exports = {
-  createConsumptionWithItems
+  createConsumptionWithItems,
+  getConsumptionWithItemsById,
 };

@@ -34,19 +34,16 @@
       </div>
 
       <nav class="sidebar-nav">
-        <!-- Primera opción: Panel de control -->
         <a href="/app/panel-control" class="nav-item">
           <i class="ri-dashboard-line nav-icon"></i>
           <span class="nav-label">Panel de control</span>
         </a>
 
-        <!-- Segunda opción: Salidas Herramienta -->
         <a href="/app/salidas" class="nav-item">
           <i class="ri-door-open-line nav-icon"></i>
           <span class="nav-label">Salidas Herramienta</span>
         </a>
 
-        <!-- Tercera opción: Ocupadas Herramienta -->
         <a href="/app/ocupadas" class="nav-item">
           <i class="ri-hotel-bed-line nav-icon"></i>
           <span class="nav-label">Ocupadas Herramienta</span>
@@ -86,24 +83,34 @@
 
             <div class="form-section">
               <label>Productos del minibar</label>
-              <div id="products-list" class="products-list">
-              </div>
+              <div id="products-list" class="products-list"></div>
             </div>
           </div>
 
           <div class="form-column form-column-side">
-            <div class="summary-card">
-              <h2>¿Cómo funciona?</h2>
-              <p class="summary-text">
-                El sistema enviará un mensaje a WhatsApp con la habitación, los productos seleccionados y las cantidades.
+            <div class="report-card">
+              <h2>Informe de consumos</h2>
+              <p class="summary-text-report">
+                Descarga un PDF con todas las habitaciones que tuvieron consumo en salida.
               </p>
-              <ul class="summary-list">
-                <li>1. Selecciona la habitación que está en salida.</li>
-                <li>2. Marca solo los productos realmente consumidos.</li>
-                <li>3. Ajusta la cantidad de cada producto.</li>
-                <li>4. Añade una nota si es necesario.</li>
-                <li>5. Pulsa el botón para abrir WhatsApp.</li>
-              </ul>
+
+              <div class="report-filters">
+                <div class="report-field">
+                  <label for="report-from">Desde</label>
+                  <input type="date" id="report-from" />
+                </div>
+
+                <div class="report-field">
+                  <label for="report-to">Hasta</label>
+                  <input type="date" id="report-to" />
+                </div>
+
+                <button id="download-report-btn" class="btn-report">
+                  Descargar informe PDF
+                </button>
+              </div>
+
+              <div id="report-status" class="report-status"></div>
             </div>
 
             <div class="form-section">
@@ -127,7 +134,7 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="/js/salidas-herramienta.js" defer></script>
 </body>
 </html>
-

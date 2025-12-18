@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("./src/config/db").initDbPool();
 const { createApp } = require("./src/app");
 
 const app = createApp();
