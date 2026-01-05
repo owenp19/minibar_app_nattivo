@@ -4,10 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Iniciar sesión – Minibar Nattivo</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   
   <!-- google fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +14,14 @@
 
   <!-- estilo css -->
   <link rel="stylesheet" href="/css/login.css" />
+
+  <!-- favicon -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="/images/mujer_isleña.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+
+  <link rel="manifest" href="/manifest.webmanifest"> <meta name="theme-color" content="#ffffff">
 </head>
 <body>
   <div class="login-page">
@@ -122,6 +126,13 @@
   </div>
 
   <script src="/js/login.js" defer></script>
+
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
+  </script>
+
 </body>
 </html>
 

@@ -2,10 +2,10 @@
   "name": "minibar-backend",
   "version": "1.0.0",
   "description": "Backend para reporte de consumo de minibar en hotel",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "keywords": [],
   "author": "",
