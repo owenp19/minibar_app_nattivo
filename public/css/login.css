@@ -1,19 +1,34 @@
 :root {
-  --color-bg: #ece0cf;
-  --color-card: #ffffff;
-  --color-accent: #c8aa6a;
-  --color-accent-strong: #8f7034;
-  --color-border-soft: #e0d4c2;
-  --color-border-strong: #d1c3ae;
-  --color-heading: #2b2b26;
-  --color-text: #4a4a3f;
-  --color-muted: #9b9687;
-  --color-error: #b3261e;
-  --color-success: #0f9d58;
+  /* === NATTIVO (logo olive) - Dark Luxury Theme === */
+  --color-bg: #070807;                 /* fondo general */
+  --color-card: #0f110f;               /* panel / card */
+  --color-card-2: #141714;             /* superficies secundarias */
+
+  /* Brand (del logo) */
+  --color-accent: #4d543d;             /* oliva principal */
+  --color-accent-strong: #3c4031;      /* oliva oscuro */
+  --color-accent-soft: #525944;        /* oliva claro */
+
+  /* Borders */
+  --color-border-soft: rgba(243, 243, 239, 0.10);
+  --color-border-strong: rgba(243, 243, 239, 0.16);
+
+  /* Text */
+  --color-heading: #f3f3ef;            /* títulos */
+  --color-text: #d7d7cf;               /* texto normal */
+  --color-muted: #a9ab9f;              /* texto secundario */
+
+  /* States */
+  --color-error: #ef4444;
+  --color-success: #22c55e;
+
+  /* Radius / Shadow */
   --radius-card: 20px;
   --radius-input: 999px;
-  --shadow-soft: 0 24px 60px rgba(15, 12, 5, 0.15);
-  --font-title: "Oswald", sans-serif;;
+  --shadow-soft: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  /* Fonts (según tu <link>) */
+  --font-title: "Anton SC", sans-serif;
   --font-text: "Roboto", sans-serif;
 }
 
@@ -46,6 +61,7 @@ body {
   flex-direction: column;
   justify-content: center;
   z-index: 2;
+  border-right: 1px solid var(--color-border-soft);
 }
 
 .login-brand {
@@ -68,31 +84,36 @@ body {
   width: 70%;
   height: 70%;
   object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
 }
 
 .brand-text .brand-name {
   font-family: var(--font-title);
-  font-weight: 800;
-  font-size: 29px;
+  font-weight: 400;
+  font-size: 30px;
   line-height: 1;
   color: var(--color-heading);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .brand-text .brand-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   font-family: var(--font-text);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-muted);
-  margin-top: 3px;
+  margin-top: 6px;
 }
 
 .login-header h1 {
   font-family: var(--font-title);
-  font-weight: 500;
-  margin: 0 0 6px 0;
+  font-weight: 400;
+  margin: 0 0 8px 0;
   color: var(--color-heading);
-  font-size: 27px;
+  font-size: 26px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .login-header p {
@@ -126,14 +147,15 @@ body {
   align-items: center;
   border-radius: var(--radius-input);
   border: 1px solid var(--color-border-soft);
-  background: #faf7f1;
+  background: var(--color-card-2);
   padding-inline: 14px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
 .field-input-wrapper:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px rgba(200, 170, 106, 0.35);
-  background: #ffffff;
+  border-color: rgba(77, 84, 61, 0.75);
+  box-shadow: 0 0 0 2px rgba(77, 84, 61, 0.25);
+  background: #0c0e0c;
 }
 
 .field-icon {
@@ -185,7 +207,7 @@ body {
 }
 
 .field-input-wrapper input::placeholder {
-  color: #c1b9a7;
+  color: rgba(169, 171, 159, 0.6);
 }
 
 .login-options {
@@ -218,13 +240,14 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #ffffff;
+  color: #0b0c0b;
   background: transparent;
 }
 
 .checkbox input:checked + .checkbox-box {
   background: var(--color-accent);
   border-color: var(--color-accent);
+  color: #0b0c0b;
 }
 
 .checkbox-box i {
@@ -240,25 +263,30 @@ body {
   background: transparent;
   padding: 0;
   font-size: 13px;
-  color: var(--color-accent-strong);
+  color: var(--color-accent-soft);
   cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--color-accent);
 }
 
 .btn-primary {
   margin-top: 8px;
   height: 44px;
   border-radius: var(--radius-input);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   background: var(--color-accent-strong);
-  color: #ffffff;
+  color: #f3f3ef;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.05s ease;
+  transition: background 0.15s ease, transform 0.05s ease, box-shadow .15s ease;
 }
 
 .btn-primary:hover {
-  background: #7a5a24;
+  background: var(--color-accent);
+  box-shadow: 0 10px 26px rgba(77, 84, 61, 0.25);
 }
 
 .btn-primary:active {
@@ -299,35 +327,41 @@ body {
 .photo-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.55));
+  background:
+    radial-gradient(circle at top left, rgba(77, 84, 61, 0.10), rgba(0, 0, 0, 0.72)),
+    linear-gradient(120deg, rgba(0,0,0,0.35), rgba(0,0,0,0.65));
 }
 
 .photo-caption {
   position: absolute;
   left: 40px;
   bottom: 40px;
-  max-width: 320px;
-  color: #ffffff;
+  max-width: 340px;
+  color: #f3f3ef;
 }
 
 .photo-caption h2 {
   font-family: var(--font-title);
-  margin: 0 0 6px 0;
-  font-size: 27px;
-  font-weight: 700;
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .photo-caption p {
   margin: 0;
   font-size: 15px;
   font-family: var(--font-text);
-  opacity: 0.9;
+  opacity: 0.88;
+  color: rgba(243, 243, 239, 0.82);
 }
 
 .loader-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(236, 224, 207, 0.92);
+  background: rgba(7, 8, 7, 0.92);
+  backdrop-filter: blur(4px);
   display: none;
   align-items: center;
   justify-content: center;
@@ -352,14 +386,15 @@ body {
   width: 50px;
   height: auto;
   object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
 }
 
 .loader-spinner {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 3px solid #d1c3ae;
-  border-top-color: var(--color-accent-strong);
+  border: 3px solid rgba(243, 243, 239, 0.18);
+  border-top-color: var(--color-accent);
   animation: spin 0.7s linear infinite;
 }
 
@@ -390,6 +425,7 @@ body {
     padding: 32px 24px 40px;
     min-height: 100vh;
     justify-content: center;
+    border-right: none;
   }
 
   .login-photo {

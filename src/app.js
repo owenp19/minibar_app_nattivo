@@ -361,11 +361,11 @@ function createApp() {
   });
 
   app.get("/app", requireLogin, (req, res) => {
-    res.redirect("/app/salida");
+    res.redirect("/app/ChargeIt");
   });
 
-  app.get("/app/salida", requireLogin, (req, res) => {
-    res.sendFile(path.join(__dirname, "..", "public", "salidas-herramienta.html"));
+  app.get("/app/ChargeIt", requireLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "chargeit-minibar.html"));
   });
 
   app.get("/api/health", (req, res) => {

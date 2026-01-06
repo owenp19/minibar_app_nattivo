@@ -1,0 +1,1280 @@
+/* =========================
+   Nattivo - Consumo (UI/UX Pro)
+   ========================= */
+
+const WHATSAPP_PHONE = "";
+
+/* ---------- Helpers UI ---------- */
+function $(id) {
+  return document.getElementById(id);
+}
+
+function setText(id, txt) {
+  const el = $(id);
+  if (el) el.textContent = txt ?? "";
+}
+
+function setClass(id, cls) {
+  const el = $(id);
+  if (el) el.className = cls ?? "";
+}
+
+function nowLabel() {
+  const now = new Date();
+  const d = now.toLocaleDateString("es-CO");
+  const t = now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+  return `${d} ${t}`;
+}
+
+function sanitizePhone(phone) {
+  const s = String(phone || "").trim();
+  if (!s) return "";
+  return s.replace(/[^\d]/g, "");
+}
+
+/* ---------- User ---------- */
+function getInitialsFromName(fullName) {
+  if (!fullName) return "";
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  const first = parts[0].charAt(0);
+  const last = parts[parts.length - 1].charAt(0);
+  return (first + last).toUpperCase();
+}
+
+async function loadCurrentUser() {
+  const nameEl = $("user-name");
+  const initialsEl = $("user-initials");
+  if (!nameEl || !initialsEl) return;
+
+  try {
+    const res = await fetch("/api/auth/me", { method: "GET", credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    const fullName = data.fullName || data.full_name || data.name || "";
+    if (fullName) {
+      nameEl.textContent = fullName;
+      initialsEl.textContent = getInitialsFromName(fullName);
+    }
+  } catch (err) {
+    console.error("Error cargando usuario actual:", err);
+  }
+}
+
+/* ---------- Room parsing ---------- */
+function getRoomNumberFromAnyLabel(label) {
+  const raw = String(label ?? "").trim();
+  if (!raw) return "";
+  const m = raw.match(/\d+/g);
+  if (m && m.length) return m.join("");
+  return raw.replace(/habitaci[oó]n|hab\.?/gi, "").trim();
+}
+
+function formatRoomOptionText(room, index) {
+  const roomNumber =
+    room.room_number ??
+    room.roomNumber ??
+    room.numero_habitacion ??
+    room.numeroHabitacion ??
+    room.numero ??
+    room.number ??
+    room.habitacion ??
+    room.code ??
+    room.codigo ??
+    null;
+
+  if (roomNumber != null) return String(roomNumber).trim();
+  const fallbackNum = room.id ?? index + 1;
+  return String(fallbackNum).trim();
+}
+
+/* ---------- KPI calculation ---------- */
+function formatPrice(price) {
+  const n = Number(price);
+  if (!Number.isFinite(n)) return "$0";
+  return n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+}
+
+function computeSelectedItems() {
+  const productsList = $("products-list");
+  if (!productsList) return [];
+
+  const rows = Array.from(productsList.querySelectorAll(".product-row"));
+
+  return rows
+    .map((row) => {
+      const checkbox = row.querySelector(".product-check");
+      const qtyInput = row.querySelector(".product-qty-input");
+
+      const checked = Boolean(checkbox && checkbox.checked);
+      const qty = Number(qtyInput?.value || "0");
+
+      const price = Number(row.dataset.productPrice || "0");
+      const name = row.dataset.productName || "Producto";
+      const productId = row.dataset.productId || "";
+
+      if (!checked || !Number.isFinite(qty) || qty <= 0) return null;
+
+      return {
+        productId,
+        name,
+        quantity: qty,
+        price: Number.isFinite(price) ? price : 0
+      };
+    })
+    .filter(Boolean);
+}
+
+function updateKpis() {
+  const roomSelect = $("room-select");
+
+  // room label
+  let roomNumber = "—";
+  if (roomSelect && roomSelect.value) {
+    const opt = roomSelect.options[roomSelect.selectedIndex];
+    const label = opt?.dataset?.roomNumber || opt?.textContent || "";
+    const parsed = getRoomNumberFromAnyLabel(label);
+    roomNumber = parsed || String(opt?.textContent || "—").trim() || "—";
+  }
+  setText("kpi-room", roomNumber);
+
+  // items + total
+  const items = computeSelectedItems();
+  const totalQty = items.reduce((acc, it) => acc + (it.quantity || 0), 0);
+  const total = items.reduce((acc, it) => acc + it.quantity * it.price, 0);
+
+  setText("kpi-items", String(totalQty));
+  setText("kpi-total", formatPrice(total));
+
+  // last action
+  setText("kpi-time", nowLabel());
+}
+
+/* ---------- Products rendering ---------- */
+async function loadProducts() {
+  const list = $("products-list");
+  if (!list) return;
+
+  try {
+    const res = await fetch("/api/products", { credentials: "include" });
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+    const products = await res.json();
+
+    list.innerHTML = "";
+
+    (Array.isArray(products) ? products : []).forEach((product) => {
+      const row = document.createElement("div");
+      row.className = "product-row";
+
+      const productId = product.id ?? product.product_id ?? product.productId ?? "";
+      const name = product.name ?? product.product_name ?? "Producto";
+      const price = Number(product.price);
+
+      row.dataset.productId = String(productId);
+      row.dataset.productName = String(name);
+      row.dataset.productPrice = Number.isFinite(price) ? String(price) : "0";
+
+      // checkbox
+      const checkboxCol = document.createElement("div");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "product-check";
+      checkboxCol.appendChild(checkbox);
+
+      // info
+      const infoCol = document.createElement("div");
+      const nameEl = document.createElement("div");
+      nameEl.className = "product-name";
+      nameEl.textContent = name;
+
+      const priceEl = document.createElement("span");
+      priceEl.className = "product-price";
+      priceEl.textContent = `Precio: ${formatPrice(price)}`;
+
+      infoCol.appendChild(nameEl);
+      infoCol.appendChild(priceEl);
+
+      // qty
+      const qtyCol = document.createElement("div");
+      qtyCol.className = "product-qty";
+
+      const qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.min = "0";
+      qtyInput.value = "0";
+      qtyInput.className = "product-qty-input";
+
+      const qtyLabel = document.createElement("span");
+      qtyLabel.textContent = "cant.";
+
+      qtyCol.appendChild(qtyInput);
+      qtyCol.appendChild(qtyLabel);
+
+      row.appendChild(checkboxCol);
+      row.appendChild(infoCol);
+      row.appendChild(qtyCol);
+
+      // UX: auto-check when qty > 0
+      qtyInput.addEventListener("input", () => {
+        const v = Number(qtyInput.value || "0");
+        if (Number.isFinite(v) && v > 0) checkbox.checked = true;
+        updateKpis();
+      });
+
+      // UX: if uncheck -> qty = 0
+      checkbox.addEventListener("change", () => {
+        if (!checkbox.checked) qtyInput.value = "0";
+        updateKpis();
+      });
+
+      list.appendChild(row);
+    });
+
+    updateKpis();
+  } catch (err) {
+    console.error("Error cargando productos:", err);
+    const status = $("status");
+    if (status) {
+      status.textContent = "No se pudieron cargar los productos.";
+      status.className = "status error";
+    }
+  }
+}
+
+/* ---------- Rooms ---------- */
+async function loadRooms({ clear = false } = {}) {
+  const select = $("room-select");
+  const status = $("status");
+  if (!select) return;
+
+  try {
+    if (clear) {
+      // keep first placeholder option
+      select.innerHTML = `<option value="">Seleccione una habitación</option>`;
+    }
+
+    const res = await fetch("/api/rooms", { credentials: "include" });
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+    const rooms = await res.json();
+
+    if (!Array.isArray(rooms) || rooms.length === 0) {
+      if (status) {
+        status.textContent = "No hay habitaciones registradas en el sistema.";
+        status.className = "status error";
+      }
+      return;
+    }
+
+    rooms.forEach((room, index) => {
+      const option = document.createElement("option");
+
+      const id =
+        room.id ??
+        room.room_id ??
+        room.roomId ??
+        room.number ??
+        room.room_number ??
+        room.numero_habitacion ??
+        room.numero ??
+        index + 1;
+
+      const roomText = formatRoomOptionText(room, index);
+
+      option.value = String(id);
+      option.textContent = roomText;
+      option.dataset.roomNumber = getRoomNumberFromAnyLabel(roomText);
+      select.appendChild(option);
+    });
+
+    updateKpis();
+  } catch (err) {
+    console.error("Error cargando habitaciones:", err);
+    if (status) {
+      status.textContent = "Error cargando habitaciones. Revisa el endpoint /api/rooms en el backend.";
+      status.className = "status error";
+    }
+  }
+}
+
+/* ---------- Search / Select all / Unselect all ---------- */
+function applyProductFilter(query) {
+  const list = $("products-list");
+  if (!list) return;
+
+  const q = String(query || "").trim().toLowerCase();
+  const rows = Array.from(list.querySelectorAll(".product-row"));
+
+  rows.forEach((row) => {
+    const name = String(row.dataset.productName || "").toLowerCase();
+    const show = !q || name.includes(q);
+    row.style.display = show ? "" : "none";
+  });
+}
+
+function selectAllVisible() {
+  const list = $("products-list");
+  if (!list) return;
+
+  const rows = Array.from(list.querySelectorAll(".product-row")).filter((r) => r.style.display !== "none");
+
+  rows.forEach((row) => {
+    const cb = row.querySelector(".product-check");
+    const qty = row.querySelector(".product-qty-input");
+    if (cb) cb.checked = true;
+    if (qty && (Number(qty.value || "0") <= 0)) qty.value = "1";
+  });
+
+  updateKpis();
+}
+
+function unselectAll() {
+  const list = $("products-list");
+  if (!list) return;
+
+  const rows = Array.from(list.querySelectorAll(".product-row"));
+  rows.forEach((row) => {
+    const cb = row.querySelector(".product-check");
+    const qty = row.querySelector(".product-qty-input");
+    if (cb) cb.checked = false;
+    if (qty) qty.value = "0";
+  });
+
+  updateKpis();
+}
+
+/* ---------- Invoice url resolving ---------- */
+function absolutizeUrl(u) {
+  const raw = String(u || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return location.origin + raw;
+  return location.origin + "/" + raw.replace(/^\/+/, "");
+}
+
+function buildInvoiceLinkFromCreated(created) {
+  const candidates = [
+    created?.invoiceUrl,
+    created?.pdfUrl,
+    created?.pdf_url,
+    created?.invoice_url,
+    created?.data?.invoiceUrl,
+    created?.data?.pdfUrl,
+    created?.data?.pdf_url,
+    created?.data?.invoice_url
+  ].filter(Boolean);
+
+  if (candidates.length) return absolutizeUrl(candidates[0]);
+
+  const id =
+    created?.id ??
+    created?.consumptionId ??
+    created?.consumption_id ??
+    created?.data?.id ??
+    created?.data?.consumptionId ??
+    created?.data?.consumption_id;
+
+  if (id != null) return `${location.origin}/api/consumptions/${id}/invoice.pdf`;
+  return "";
+}
+
+async function verifyLinkExists(url) {
+  if (!url) return false;
+
+  try {
+    const res = await fetch(url, { method: "HEAD", credentials: "include" });
+    if (res.ok) return true;
+  } catch (_) {}
+
+  try {
+    const res2 = await fetch(url, { method: "GET", credentials: "include" });
+    return res2.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function resolveInvoiceLinkWithFallback(created) {
+  const url = buildInvoiceLinkFromCreated(created);
+  if (!url) return "";
+
+  if (await verifyLinkExists(url)) return url;
+
+  const id =
+    created?.id ??
+    created?.consumptionId ??
+    created?.consumption_id ??
+    created?.data?.id ??
+    created?.data?.consumptionId ??
+    created?.data?.consumption_id;
+
+  if (id == null) return "";
+
+  const base = `${location.origin}/api/consumptions/${id}`;
+  const alternatives = [
+    `${base}/invoice.pdf`,
+    `${base}/invoice`,
+    `${base}/pdf`,
+    `${location.origin}/api/consumption/${id}/invoice.pdf`,
+    `${location.origin}/api/invoices/${id}.pdf`,
+    `${location.origin}/api/invoices/${id}/pdf`
+  ];
+
+  for (const a of alternatives) {
+    if (await verifyLinkExists(a)) return a;
+  }
+
+  return "";
+}
+
+/* ---------- WhatsApp message (used in preview + send) ---------- */
+function buildWhatsappMessage(roomNumber, items, total, note, invoiceLink) {
+  const now = new Date();
+  const fecha = now.toLocaleDateString("es-CO");
+  const hora = now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+
+  const lines = [];
+  lines.push("Consumo minibar Nattivo");
+  lines.push(`Habitación ${roomNumber}`);
+  lines.push(`Fecha: ${fecha} – Hora: ${hora}`);
+  lines.push("");
+
+  items.forEach((it) => {
+    const itemTotal = it.quantity * it.price;
+    lines.push(`${it.quantity} × ${it.name} - ${formatPrice(itemTotal)}`);
+  });
+
+  const totalQty = items.reduce((acc, it) => acc + it.quantity, 0);
+  lines.push("");
+  lines.push(`Total de ítems: ${totalQty}`);
+  lines.push(`Total: ${formatPrice(total)}`);
+
+  const cleanNote = String(note || "").trim();
+  if (cleanNote) {
+    lines.push("");
+    lines.push(`Nota: ${cleanNote}`);
+  }
+
+  if (invoiceLink) {
+    lines.push("");
+    lines.push(`Cuenta de cobro (PDF): ${invoiceLink}`);
+  }
+
+  return lines.join("\n");
+}
+
+function openWhatsAppWithMessage(message) {
+  const encodedMessage = encodeURIComponent(message);
+  const phone = sanitizePhone(WHATSAPP_PHONE);
+
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodedMessage}`
+    : `https://wa.me/?text=${encodedMessage}`;
+
+  window.open(url, "_blank");
+}
+
+async function copyToClipboard(text) {
+  const raw = String(text || "");
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(raw);
+      return true;
+    }
+  } catch (_) {}
+
+  // fallback
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = raw;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/* ---------- Submit flow ---------- */
+function getSelectedRoom() {
+  const roomSelect = $("room-select");
+  if (!roomSelect) return { roomId: "", roomNumber: "" };
+
+  const roomId = roomSelect.value;
+  const opt = roomSelect.options[roomSelect.selectedIndex];
+
+  const roomNumber = getRoomNumberFromAnyLabel(
+    opt?.dataset?.roomNumber || opt?.textContent || ""
+  );
+
+  return { roomId, roomNumber };
+}
+
+function readNote() {
+  return String($("note")?.value || "");
+}
+
+function setStatus(msg, kind) {
+  const status = $("status");
+  if (!status) return;
+  status.textContent = msg || "";
+  status.className = `status ${kind || ""}`.trim();
+}
+
+async function handleSubmit({ openWhatsapp = true } = {}) {
+  setStatus("", "");
+  const { roomId, roomNumber } = getSelectedRoom();
+  const items = computeSelectedItems();
+
+  if (!roomId || !roomNumber) {
+    setStatus("Selecciona una habitación antes de continuar.", "error");
+    return { ok: false };
+  }
+
+  if (items.length === 0) {
+    setStatus("Selecciona al menos un producto y su cantidad.", "error");
+    return { ok: false };
+  }
+
+  const total = items.reduce((acc, it) => acc + it.quantity * it.price, 0);
+  const note = readNote();
+
+  const payload = {
+    roomId,
+    note,
+    items: items.map((x) => ({ productId: x.productId, quantity: x.quantity }))
+  };
+
+  try {
+    const res = await fetch("/api/consumptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include"
+    });
+
+    if (!res.ok) throw new Error(`Error registrando el consumo (HTTP ${res.status})`);
+
+    let created = null;
+    try {
+      created = await res.json();
+    } catch (_) {
+      created = null;
+    }
+
+    let invoiceLink = "";
+    try {
+      invoiceLink = await resolveInvoiceLinkWithFallback(created);
+    } catch (_) {
+      invoiceLink = "";
+    }
+
+    const message = buildWhatsappMessage(roomNumber, items, total, note, invoiceLink);
+
+    if (openWhatsapp) openWhatsAppWithMessage(message);
+
+    setStatus(
+      invoiceLink
+        ? "Consumo registrado. Se generó el resumen con enlace PDF."
+        : "Consumo registrado. Se generó el resumen (sin enlace PDF).",
+      "success"
+    );
+
+    updateKpis();
+    return { ok: true, message, invoiceLink };
+  } catch (err) {
+    console.error("Error al registrar consumo:", err);
+    setStatus("Ocurrió un error al registrar el consumo.", "error");
+    return { ok: false };
+  }
+}
+
+/* ---------- Report PDF ---------- */
+function setReportStatus(msg, kind) {
+  const el = $("report-status");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.className = `report-status ${kind || ""}`.trim();
+}
+
+function normalizeConsumptionRecord(raw) {
+  const room =
+    raw.roomNumber ??
+    raw.room_number ??
+    raw.room ??
+    raw.habitacion ??
+    raw.numero_habitacion ??
+    raw.room?.room_number ??
+    raw.room?.number ??
+    raw.room?.numero_habitacion ??
+    raw.room?.numero ??
+    "";
+
+  const roomNumber = getRoomNumberFromAnyLabel(room);
+
+  const created =
+    raw.created_at ??
+    raw.createdAt ??
+    raw.date ??
+    raw.fecha ??
+    raw.timestamp ??
+    raw.submitted_at ??
+    raw.created ??
+    null;
+
+  const createdAt = created ? new Date(created) : null;
+
+  const itemsRaw = raw.items ?? raw.products ?? raw.detalle ?? raw.details ?? raw.consumptions ?? [];
+  const items = Array.isArray(itemsRaw)
+    ? itemsRaw
+        .map((it) => {
+          const name = it.name ?? it.product_name ?? it.product?.name ?? it.productName ?? "Producto";
+          const quantity = Number(it.quantity ?? it.qty ?? it.cantidad ?? 0);
+          const price = Number(it.price ?? it.valor ?? it.product?.price ?? it.unitPrice ?? 0);
+          if (!Number.isFinite(quantity) || quantity <= 0) return null;
+          return { name, quantity, price: Number.isFinite(price) ? price : 0 };
+        })
+        .filter(Boolean)
+    : [];
+
+  const total = Number(raw.total ?? raw.total_amount ?? raw.totalAmount ?? raw.valor_total ?? NaN);
+  const computedTotal = items.reduce((acc, it) => acc + it.quantity * it.price, 0);
+
+  return {
+    roomNumber: roomNumber || "N/A",
+    createdAt,
+    items,
+    total: Number.isFinite(total) ? total : computedTotal
+  };
+}
+
+function groupReportByRoom(records) {
+  const map = new Map();
+
+  records.forEach((r) => {
+    const key = r.roomNumber || "N/A";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  });
+
+  const rooms = Array.from(map.keys()).sort((a, b) => String(a).localeCompare(String(b), "es"));
+  return rooms.map((roomNumber) => {
+    const list = map.get(roomNumber) || [];
+    list.sort((a, b) => {
+      const ta = a.createdAt ? a.createdAt.getTime() : 0;
+      const tb = b.createdAt ? b.createdAt.getTime() : 0;
+      return ta - tb;
+    });
+    const roomTotal = list.reduce((acc, x) => acc + (Number(x.total) || 0), 0);
+    const roomItems = list.reduce((acc, x) => acc + x.items.reduce((iAcc, it) => iAcc + (it.quantity || 0), 0), 0);
+    return { roomNumber, records: list, roomTotal, roomItems };
+  });
+}
+
+async function fetchConsumptionsForReport(from, to) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+
+  const urls = [
+    `/api/consumptions/report?${params.toString()}`,
+    `/api/consumptions?${params.toString()}`,
+    `/api/consumptions/report`,
+    `/api/consumptions`
+  ];
+
+  let lastErr = null;
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.data)) return data.data;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error("No data");
+}
+
+function buildReportFilename(from, to) {
+  const f = from || "todo";
+  const t = to || "todo";
+  return `informe-consumos-${f}-${t}.pdf`;
+}
+
+async function downloadReportPdf() {
+  setReportStatus("", "");
+
+  const jsPDFCtor = window.jspdf?.jsPDF || window.jsPDF;
+  if (!jsPDFCtor) {
+    setReportStatus("No está cargada la librería del PDF.", "err");
+    return;
+  }
+
+  const from = $("report-from")?.value || "";
+  const to = $("report-to")?.value || "";
+
+  try {
+    const raw = await fetchConsumptionsForReport(from, to);
+    const normalized = raw
+      .map(normalizeConsumptionRecord)
+      .filter((x) => x.items.length > 0 || (x.total && x.total > 0));
+
+    if (normalized.length === 0) {
+      setReportStatus("No hay consumos en el rango seleccionado.", "err");
+      return;
+    }
+
+    const grouped = groupReportByRoom(normalized);
+    const grandTotal = normalized.reduce((acc, x) => acc + (Number(x.total) || 0), 0);
+
+    const doc = new jsPDFCtor({ unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 48;
+
+    const gen = nowLabel();
+
+    let y = 70;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("INFORME DE CONSUMOS - MINIBAR NATTIVO", margin, y);
+
+    y += 22;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Rango: ${from || "—"} a ${to || "—"}`, margin, y);
+
+    y += 16;
+    doc.text(`Generado: ${gen}`, margin, y);
+
+    y += 18;
+    doc.setDrawColor(180);
+    doc.line(margin, y, pageW - margin, y);
+
+    y += 22;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Habitaciones con consumo: ${grouped.length}`, margin, y);
+    doc.text(`Total general: ${formatPrice(grandTotal)}`, pageW - margin, y, { align: "right" });
+
+    y += 18;
+    doc.setFont("helvetica", "normal");
+
+    const ensureSpace = (need) => {
+      if (y + need <= pageH - 48) return;
+      doc.addPage();
+      y = 72;
+    };
+
+    grouped.forEach((g) => {
+      ensureSpace(80);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(`Habitación ${g.roomNumber}`, margin, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text(`Consumos: ${g.records.length}  Ítems: ${g.roomItems}`, margin, y + 16);
+      doc.text(`Total: ${formatPrice(g.roomTotal)}`, pageW - margin, y + 16, { align: "right" });
+
+      y += 30;
+      doc.setDrawColor(210);
+      doc.line(margin, y, pageW - margin, y);
+      y += 18;
+
+      g.records.forEach((r) => {
+        ensureSpace(50);
+
+        const d = r.createdAt ? r.createdAt.toLocaleDateString("es-CO") : "—";
+        const t = r.createdAt
+          ? r.createdAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })
+          : "—";
+
+        doc.setFont("helvetica", "bold");
+        doc.text(`${d}  ${t}`, margin, y);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(formatPrice(r.total), pageW - margin, y, { align: "right" });
+
+        y += 16;
+
+        r.items.forEach((it) => {
+          ensureSpace(30);
+          const lineTotal = it.quantity * it.price;
+          doc.text(`${it.quantity} × ${it.name}`, margin, y, { maxWidth: pageW - margin * 2 - 140 });
+          doc.text(formatPrice(lineTotal), pageW - margin, y, { align: "right" });
+          y += 14;
+        });
+
+        y += 8;
+        doc.setDrawColor(235);
+        doc.line(margin, y, pageW - margin, y);
+        y += 14;
+      });
+
+      y += 6;
+    });
+
+    ensureSpace(60);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("TOTAL GENERAL", margin, y);
+    doc.text(formatPrice(grandTotal), pageW - margin, y, { align: "right" });
+
+    doc.save(buildReportFilename(from, to));
+    setReportStatus("Informe descargado correctamente.", "ok");
+  } catch (err) {
+    console.error(err);
+    setReportStatus("No se pudo generar el informe. Revisa el endpoint de consumos.", "err");
+  }
+}
+
+/* ---------- Modal preview + buttons ---------- */
+function setPreviewContent(text) {
+  const el = $("preview-content");
+  if (el) el.textContent = text || "—";
+}
+
+function openPreviewModal() {
+  const modal = $("preview-modal");
+  if (!modal) return;
+  modal.classList.add("visible");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closePreviewModal() {
+  const modal = $("preview-modal");
+  if (!modal) return;
+  modal.classList.remove("visible");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function buildPreviewMessageOnly() {
+  const { roomNumber } = getSelectedRoom();
+  const items = computeSelectedItems();
+  const note = readNote();
+  const total = items.reduce((acc, it) => acc + it.quantity * it.price, 0);
+
+  if (!roomNumber) return "Selecciona una habitación.";
+  if (!items.length) return "Selecciona productos y cantidades para generar el resumen.";
+
+  // preview sin link PDF (el PDF se resuelve al registrar)
+  return buildWhatsappMessage(roomNumber, items, total, note, "");
+}
+
+/* ---------- Menu toggle ---------- */
+function setupMenuToggle() {
+  const sidebar = document.querySelector(".sidebar");
+  const toggleBtn = $("menu-toggle");
+  const backdrop = $("sidebar-backdrop");
+  if (!sidebar || !toggleBtn) return;
+
+  const open = () => {
+    sidebar.classList.add("sidebar-open");
+    if (backdrop) backdrop.classList.add("backdrop-visible");
+  };
+  const close = () => {
+    sidebar.classList.remove("sidebar-open");
+    if (backdrop) backdrop.classList.remove("backdrop-visible");
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    if (sidebar.classList.contains("sidebar-open")) close();
+    else open();
+  });
+
+  if (backdrop) backdrop.addEventListener("click", close);
+}
+
+/* ---------- Clear ---------- */
+function clearForm() {
+  const room = $("room-select");
+  const note = $("note");
+  const search = $("product-search");
+
+  if (room) room.value = "";
+  if (note) note.value = "";
+  if (search) search.value = "";
+
+  unselectAll();
+  applyProductFilter("");
+  setStatus("", "");
+  setReportStatus("", "");
+  setPreviewContent("—");
+  updateKpis();
+}
+
+/* ---------- Wiring ---------- */
+function setupEvents() {
+  // room change -> KPI + "last action"
+  const roomSelect = $("room-select");
+  if (roomSelect) roomSelect.addEventListener("change", updateKpis);
+
+  // refresh rooms
+  const refreshRoomsBtn = $("refresh-rooms-btn");
+  if (refreshRoomsBtn) {
+    refreshRoomsBtn.addEventListener("click", async () => {
+      setStatus("", "");
+      await loadRooms({ clear: true });
+      setStatus("Habitaciones actualizadas.", "success");
+      updateKpis();
+    });
+  }
+
+  // search
+  const productSearch = $("product-search");
+  if (productSearch) {
+    productSearch.addEventListener("input", () => applyProductFilter(productSearch.value));
+  }
+
+  // select/unselect
+  const selectAllBtn = $("select-all-btn");
+  if (selectAllBtn) selectAllBtn.addEventListener("click", selectAllVisible);
+
+  const unselectAllBtn = $("unselect-all-btn");
+  if (unselectAllBtn) unselectAllBtn.addEventListener("click", unselectAll);
+
+  // clear
+  const clearBtn = $("clear-btn");
+  if (clearBtn) clearBtn.addEventListener("click", clearForm);
+
+  // main submit
+  const submitBtn = $("submit-btn");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", async () => {
+      // registra y abre WhatsApp
+      const r = await handleSubmit({ openWhatsapp: true });
+      if (r?.ok) {
+        // opcional: podrías limpiar cantidades, pero por UX lo dejamos como está.
+      }
+    });
+  }
+
+  // copy summary (sin registrar)
+  const copyBtn = $("copy-btn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const msg = buildPreviewMessageOnly();
+      const ok = await copyToClipboard(msg);
+      setStatus(ok ? "Resumen copiado al portapapeles." : "No se pudo copiar el resumen.", ok ? "success" : "error");
+      updateKpis();
+    });
+  }
+
+  // preview modal open
+  const previewBtn = $("preview-btn");
+  if (previewBtn) {
+    previewBtn.addEventListener("click", () => {
+      setPreviewContent(buildPreviewMessageOnly());
+      openPreviewModal();
+      updateKpis();
+    });
+  }
+
+  // preview modal close
+  const closePreviewBtn = $("close-preview-btn");
+  if (closePreviewBtn) closePreviewBtn.addEventListener("click", closePreviewModal);
+
+  const modal = $("preview-modal");
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closePreviewModal();
+    });
+  }
+
+  // preview modal copy
+  const previewCopyBtn = $("preview-copy-btn");
+  if (previewCopyBtn) {
+    previewCopyBtn.addEventListener("click", async () => {
+      const msg = $("preview-content")?.textContent || "";
+      const ok = await copyToClipboard(msg);
+      setStatus(ok ? "Resumen copiado." : "No se pudo copiar.", ok ? "success" : "error");
+      updateKpis();
+    });
+  }
+
+  // preview modal send (registra y abre WhatsApp)
+  const previewSendBtn = $("preview-send-btn");
+  if (previewSendBtn) {
+    previewSendBtn.addEventListener("click", async () => {
+      const r = await handleSubmit({ openWhatsapp: true });
+      if (r?.ok) closePreviewModal();
+    });
+  }
+
+  // report
+  const downloadBtn = $("download-report-btn");
+  if (downloadBtn) downloadBtn.addEventListener("click", downloadReportPdf);
+}
+
+/* ---------- Init ---------- */
+async function init() {
+  loadCurrentUser();
+
+  await loadRooms({ clear: true });
+  await loadProducts();
+
+  setupMenuToggle();
+  setupEvents();
+
+  // ensure KPIs show something
+  updateKpis();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+/* =========================
+   Desbloqueo de habitación (multi-room) - ADDON
+   ========================= */
+
+function getSelectedRoomsMulti() {
+  const select = $("rooms-multi");
+  if (!select) return [];
+
+  const selected = Array.from(select.selectedOptions || []);
+  return selected
+    .map((opt) => getRoomNumberFromAnyLabel(opt?.dataset?.roomNumber || opt?.textContent || opt?.value || ""))
+    .filter(Boolean);
+}
+
+function buildUnlockMessage(roomNumbers, note) {
+  const now = new Date();
+  const fecha = now.toLocaleDateString("es-CO");
+  const hora = now.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+
+  const roomsLine = roomNumbers.join(", ");
+
+  const lines = [];
+  lines.push("Desbloqueo de habitación");
+  lines.push(`Habitación(es): ${roomsLine}`);
+  lines.push(`Fecha: ${fecha} – Hora: ${hora}`);
+
+  const cleanNote = String(note || "").trim();
+  if (cleanNote) {
+    lines.push("");
+    lines.push(`Nota: ${cleanNote}`);
+  }
+
+  return lines.join("\n");
+}
+
+function setUnlockStatus(msg, kind) {
+  const el = $("unlock-status");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.className = `status ${kind || ""}`.trim();
+}
+
+function setUnlockPreview(text) {
+  const box = $("unlock-preview-box");
+  if (box) box.textContent = text || "—";
+}
+
+async function loadRoomsMulti({ clear = false } = {}) {
+  const select = $("rooms-multi");
+  if (!select) return;
+
+  try {
+    if (clear) select.innerHTML = "";
+
+    const res = await fetch("/api/rooms", { credentials: "include" });
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+
+    const rooms = await res.json();
+
+    if (!Array.isArray(rooms) || rooms.length === 0) {
+      setUnlockStatus("No hay habitaciones registradas en el sistema.", "error");
+      return;
+    }
+
+    rooms.forEach((room, index) => {
+      const option = document.createElement("option");
+
+      const id =
+        room.id ??
+        room.room_id ??
+        room.roomId ??
+        room.number ??
+        room.room_number ??
+        room.numero_habitacion ??
+        room.numero ??
+        index + 1;
+
+      const roomText = formatRoomOptionText(room, index);
+
+      option.value = String(id);
+      option.textContent = roomText;
+      option.dataset.roomNumber = getRoomNumberFromAnyLabel(roomText);
+
+      select.appendChild(option);
+    });
+
+    setUnlockStatus("Habitaciones cargadas.", "success");
+  } catch (err) {
+    console.error("Error cargando habitaciones (multi):", err);
+    setUnlockStatus("Error cargando habitaciones. Revisa el endpoint /api/rooms.", "error");
+  }
+}
+
+function selectAllRoomsMulti() {
+  const select = $("rooms-multi");
+  if (!select) return;
+
+  Array.from(select.options).forEach((opt) => (opt.selected = true));
+}
+
+function clearRoomsMultiSelection() {
+  const select = $("rooms-multi");
+  if (!select) return;
+
+  Array.from(select.options).forEach((opt) => (opt.selected = false));
+}
+
+function buildUnlockPreviewMessageOnly() {
+  const rooms = getSelectedRoomsMulti();
+  const note = String($("unlock-note")?.value || "");
+
+  if (!rooms.length) return "Selecciona una o varias habitaciones.";
+  return buildUnlockMessage(rooms, note);
+}
+
+function setupUnlockEvents() {
+  // Si esta página no tiene el multiselect, no hace nada.
+  if (!$("rooms-multi")) return;
+
+  const refreshBtn = $("unlock-refresh-rooms-btn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      setUnlockStatus("", "");
+      await loadRoomsMulti({ clear: true });
+      setUnlockPreview(buildUnlockPreviewMessageOnly());
+    });
+  }
+
+  const selectAllBtn = $("unlock-select-all-btn");
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", () => {
+      selectAllRoomsMulti();
+      setUnlockPreview(buildUnlockPreviewMessageOnly());
+    });
+  }
+
+  const clearBtn = $("unlock-clear-selection-btn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      clearRoomsMultiSelection();
+      setUnlockPreview("—");
+      setUnlockStatus("", "");
+    });
+  }
+
+  const roomsSelect = $("rooms-multi");
+  if (roomsSelect) {
+    roomsSelect.addEventListener("change", () => {
+      setUnlockPreview(buildUnlockPreviewMessageOnly());
+    });
+  }
+
+  const note = $("unlock-note");
+  if (note) {
+    note.addEventListener("input", () => {
+      setUnlockPreview(buildUnlockPreviewMessageOnly());
+    });
+  }
+
+  const previewBtn = $("unlock-preview-btn");
+  if (previewBtn) {
+    previewBtn.addEventListener("click", () => {
+      const msg = buildUnlockPreviewMessageOnly();
+      setPreviewContent(msg);
+      openPreviewModal();
+    });
+  }
+
+  const copyBtn = $("unlock-copy-btn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const msg = buildUnlockPreviewMessageOnly();
+      const ok = await copyToClipboard(msg);
+      setUnlockStatus(ok ? "Mensaje copiado al portapapeles." : "No se pudo copiar el mensaje.", ok ? "success" : "error");
+    });
+  }
+
+  const sendBtn = $("unlock-send-btn");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", () => {
+      const rooms = getSelectedRoomsMulti();
+      const noteText = String($("unlock-note")?.value || "");
+
+      if (!rooms.length) {
+        setUnlockStatus("Selecciona una o varias habitaciones antes de enviar.", "error");
+        return;
+      }
+
+      const msg = buildUnlockMessage(rooms, noteText);
+      setUnlockPreview(msg);
+      openWhatsAppWithMessage(msg);
+      setUnlockStatus("Mensaje listo para enviar en WhatsApp.", "success");
+    });
+  }
+
+  // Reutiliza botones del modal (ya existen en tu JS)
+  const previewSendBtn = $("preview-send-btn");
+  if (previewSendBtn) {
+    previewSendBtn.addEventListener("click", () => {
+      const rooms = getSelectedRoomsMulti();
+      const noteText = String($("unlock-note")?.value || "");
+
+      if (!rooms.length) {
+        setUnlockStatus("Selecciona una o varias habitaciones antes de enviar.", "error");
+        return;
+      }
+
+      const msg = buildUnlockMessage(rooms, noteText);
+      openWhatsAppWithMessage(msg);
+      closePreviewModal();
+      setUnlockStatus("Mensaje listo para enviar en WhatsApp.", "success");
+    });
+  }
+}
+
+/* =========================
+   Init (REEMPLAZAR tu init por este)
+   - Evita llamar endpoints que no existen en páginas que no los usan
+   ========================= */
+
+async function init() {
+  loadCurrentUser();
+
+  // Consumo: solo si existen los elementos
+  if ($("room-select")) await loadRooms({ clear: true });
+  if ($("products-list")) await loadProducts();
+
+  // Desbloqueo: solo si existe el multiselect
+  if ($("rooms-multi")) await loadRoomsMulti({ clear: true });
+
+  setupMenuToggle();
+
+  // Eventos existentes (consumo) - son seguros porque validan IDs
+  setupEvents();
+
+  // Eventos del desbloqueo
+  setupUnlockEvents();
+
+  // Preview inicial del desbloqueo
+  if ($("rooms-multi")) setUnlockPreview(buildUnlockPreviewMessageOnly());
+
+  updateKpis();
+}
+
+document.addEventListener("DOMContentLoaded", init);
